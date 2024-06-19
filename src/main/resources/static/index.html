@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Data Portal</title>
+    <script>
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const deviceSerialNumber = document.getElementById('deviceSerialNumber').value;
+            const portNumber = document.getElementById('portNumber').value;
+            const type = document.getElementById('type').value;
+
+            const data = {
+                deviceSerialNumber,
+                portNumber,
+                type
+            };
+
+            const response = await fetch('/api/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const savedData = await response.json();
+                document.getElementById('status').innerText = 'Data saved successfully!';
+                document.getElementById('dataId').value = savedData.id;
+            } else {
+                document.getElementById('status').innerText = 'Failed to save data.';
+            }
+        }
+
+        async function handleDownload() {
+            const dataId = document.getElementById('dataId').value;
+
+            if (!dataId) {
+                document.getElementById('status').innerText = 'Please save data first.';
+                return;
+            }
+
+            const response = await fetch(`/api/downloadsignature/${dataId}`);
+
+            if (response.ok) {
+                const signature = await response.text();
+                const element = document.createElement('a');
+                const file = new Blob([signature], { type: 'text/plain' });
+                element.href = URL.createObjectURL(file);
+                element.download = 'signature.txt';
+                document.body.appendChild(element);
+                element.click();
+            } else {
+                document.getElementById('status').innerText = 'Failed to download signature.';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Device Data Portal</h1>
+    <form onsubmit="handleSubmit(event)">
+        <label for="deviceSerialNumber">Device Serial Number:</label>
+        <input type="text" id="deviceSerialNumber" name="deviceSerialNumber" required><br><br>
+
+        <label for="portNumber">Port Number:</label>
+        <input type="text" id="portNumber" name="portNumber" required><br><br>
+
+        <label for="type">Type:</label>
+        <select id="type" name="type" required>
+            <option value="Type1">Type1</option>
+            <option value="Type2">Type2</option>
+            <!-- Add other types as needed -->
+        </select><br><br>
+
+        <input type="submit" value="Submit">
+    </form>
+    <br>
+    <input type="hidden" id="dataId">
+    <button onclick="handleDownload()">Download Signature</button>
+    <br><br>
+    <div id="status"></div>
+</body>
+</html>
